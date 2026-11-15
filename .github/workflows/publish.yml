@@ -1,0 +1,41 @@
+name: Publish God's Eye
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '23 5 * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Fetch the built game
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/itskidd03-byte/Lost.git source
+          cd source
+          git sparse-checkout set docs/gods-eye
+      - name: Assemble the site
+        run: |
+          mkdir -p site
+          cp -r source/docs/gods-eye/. site/
+          ls -la site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4
